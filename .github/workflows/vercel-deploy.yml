@@ -1,6 +1,6 @@
 name: Deploy to Vercel
 
-# Deploys through the Vercel CLI on GitHub's own runners, instead of Vercel's
+# Deploys through the Vercel CLI on Depot runners, instead of Vercel's
 # own Git integration (switched off in vercel.json so nothing deploys twice).
 # Every run, pull requests included, deploys to production.
 #
@@ -22,12 +22,14 @@ concurrency:
 env:
   VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
   VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+  # Point npm/yarn/pnpm or build caches to the persistent NVMe mount
+  NPM_CONFIG_CACHE: /tmp/depot-cache/npm
 
 jobs:
   deploy:
     # Pull requests from forks get no secrets, so they have nothing to deploy with.
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
-    runs-on: ubuntu-latest
+    runs-on: depot-ubuntu-22.04
     permissions:
       contents: read
       pull-requests: write
@@ -36,6 +38,11 @@ jobs:
       url: ${{ steps.deploy.outputs.url }}
     steps:
       - uses: actions/checkout@v4
+
+      # Mount a high-speed persistent NVMe cache disk from Depot
+      - uses: depot/cache-mount@v1
+        with:
+          path: /tmp/depot-cache
 
       - name: Check Vercel secrets
         env:
@@ -53,6 +60,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: 'npm'
+          cache-dependency-path: 'package-lock.json'
 
       - name: Install Vercel CLI
         run: npm install --global vercel@latest
