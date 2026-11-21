@@ -6,8 +6,8 @@ name: Deploy to Vercel
 #
 # Needs repository secrets VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID.
 on:
-  push:
-    branches: [main]
+  # push:
+  #   branches: [main]
   pull_request:
   workflow_dispatch:
 
