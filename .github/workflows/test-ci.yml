@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: depot-ubuntu-22.04  # Must be a Depot runner environment
+    permissions:
+      contents: read
+      id-token: write            # Required for Depot authentication
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      # 1. Run your tests and output a JUnit XML file
+      - name: Run tests
+        run: npm test -- --reporter=junit --outputFile=test-results/junit.xml
+
+      # 2. Upload the test report to Depot
+      - uses: depot/test-report-action@v1
+        if: ${{ ! cancelled() }}
+        with:
+          path: test-results/junit.xml
